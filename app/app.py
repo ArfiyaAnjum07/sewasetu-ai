@@ -26,7 +26,7 @@ def now_ist():
 import requests
 import psycopg2
 from flask import (Flask, request, session, redirect, url_for, render_template,
-                   flash, send_file, abort)
+                   flash, send_file, abort, jsonify)
 from fpdf import FPDF
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -670,7 +670,38 @@ def admin_reject(app_id):
     return _admin_decide(app_id, "REJECTED", request.form.get("note", ""))
 
 
+# ---------------------------------------------------------------------------
+# Evaluation Dashboard
+# ---------------------------------------------------------------------------
+
+@app.route("/eval-dashboard")
+def eval_dashboard():
+    import eval_suite
+    db_stats = {}
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT status, count(*) FROM applications GROUP BY status")
+        db_stats = {r[0]: r[1] for r in cur.fetchall()}
+        cur.execute("SELECT count(*) FROM applications")
+        db_stats["TOTAL"] = cur.fetchone()[0]
+        cur.close(); conn.close()
+    except Exception:
+        pass
+
+    eval_data = eval_suite.get_eval_results(refresh=False)
+    return render_template("eval_dashboard.html", eval_data=eval_data, db_stats=db_stats)
+
+
+@app.route("/api/eval/run", methods=["GET", "POST"])
+def api_eval_run():
+    import eval_suite
+    eval_data = eval_suite.get_eval_results(refresh=True)
+    return jsonify(eval_data)
+
+
 from oauth import oauth as _oauth_blueprint   # noqa: E402  (needs the definitions above)
+
 app.register_blueprint(_oauth_blueprint)
 
 
