@@ -39,8 +39,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from flask import (Blueprint, request, jsonify, redirect, render_template, session,
                    flash, url_for, abort)
 
-import app as portal
-
 oauth = Blueprint("oauth", __name__)
 
 ISSUER = os.environ.get("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
@@ -620,3 +618,7 @@ def admin_tokens():
     grants = _active_grants("officer:" + session.get("admin_user", portal.ADMIN_USERNAME))
     return render_template("admin_tokens.html", token=issued, rows=rows, clients=clients, issuer=ISSUER,
                            grants=grants, subject="officer:" + session.get("admin_user", portal.ADMIN_USERNAME))
+
+
+import app as portal
+
